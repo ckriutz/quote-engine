@@ -16,6 +16,7 @@ var quotes Quotes
 // Index is the function that is fired when the user goes to the root page.
 func Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=UTF-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, "<h2>Casey's Quote Engine. Delivering the best in quotes!</h2>")
 }
@@ -35,6 +36,7 @@ func QuoteIndex(w http.ResponseWriter, r *http.Request) {
 
 	// Set all the fun headers.
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(q)
 }
@@ -63,6 +65,7 @@ func QuoteByID(w http.ResponseWriter, r *http.Request) {
 
 	// Set all the fun headers.
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(q)
 }
