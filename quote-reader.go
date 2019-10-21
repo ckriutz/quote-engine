@@ -32,3 +32,9 @@ func readQuotesFromJSONFile() Quotes {
 	// Okay, lets return all of the quotes!
 	return quotes
 }
+
+func writeQuotesToJSONFile(quotes Quotes) {
+	file, _ := json.MarshalIndent(quotes, "", "")
+
+	_ = ioutil.WriteFile("quotes.json", file, 0644)
+}

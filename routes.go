@@ -46,4 +46,10 @@ var routes = Routes{
 		"/quote/{quoteId}",
 		QuoteByID,
 	},
+	Route{
+		"AddQuote",
+		"POST",
+		"/quote",
+		AddQuote,
+	},
 }
