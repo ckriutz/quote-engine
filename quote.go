@@ -11,3 +11,10 @@ type Quote struct {
 	Text   string `json:"text"`
 	Author string `json:"author"`
 }
+
+// DynamoQuote is a goddammed struct designed to represent a Quote object that comes from AWS DynamoDb.
+type DynamoQuote struct {
+	QuoteId string `json:"QuoteId"`
+	Text    string `json:"text"`
+	Author  string `json:"author"`
+}

@@ -25,15 +25,15 @@ func Index(w http.ResponseWriter, r *http.Request) {
 // QuoteIndex is the function that fires when the user hits /quote
 // At the moment, they would get a random quote.
 func QuoteIndex(w http.ResponseWriter, r *http.Request) {
-	// First, lets get the quotes from the JSON file. This is in the other file. I *moved it*.
-	quotes = readQuotesFromJSONFile()
+	// First, lets get the number of quotes from DynamoDB
+	quoteCount := getCountOfQuotes()
 
 	// Grab a random number so I can grab a random quote.
 	rand.Seed(time.Now().UnixNano())
-	var selectedQuoteID = rand.Intn(len(quotes.Quotes))
+	var selectedQuoteID = rand.Intn(quoteCount)
 
 	// Now, actually get the quote.
-	q := &quotes.Quotes[selectedQuoteID]
+	q := getQuoteFromDynamo(selectedQuoteID)
 
 	// Set all the fun headers.
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -58,11 +58,8 @@ func QuoteByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Now, lets get the quotes from the JSON file. This is in the other file. I *moved it*.
-	quotes = readQuotesFromJSONFile()
-
 	// ...attempt to find the quote the user is looking for.
-	q := GetQuoteByID(qID)
+	q := getQuoteFromDynamo(qID)
 
 	// Set all the fun headers.
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -71,20 +68,7 @@ func QuoteByID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(q)
 }
 
-// GetQuoteByID will iterate though the quotes, and attempt to find the one with the right ID.
-func GetQuoteByID(ID int) Quote {
-	for _, qt := range quotes.Quotes {
-		if qt.ID == ID {
-			return qt
-		}
-	}
-	return Quote{ID: 0, Text: "This did not work.", Author: "Casey"}
-}
-
 func AddQuote(w http.ResponseWriter, r *http.Request) {
-	var quote Quote
-	quotes = readQuotesFromJSONFile()
-
 	// First, lets try to read this thing in.
 	body, err := ioutil.ReadAll(r.Body)
 
@@ -98,6 +82,8 @@ func AddQuote(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	quote := DynamoQuote{}
+
 	// We got something, sure, but it looks like it was not a quote.
 	if err := json.Unmarshal(body, &quote); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -110,9 +96,10 @@ func AddQuote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// At this point it looks like we are in a better place. Lets add it to the list.
-	quote.ID = len(quotes.Quotes)
-	quotes.Quotes = append(quotes.Quotes, quote)
-	writeQuotesToJSONFile(quotes)
+	quoteCount := getCountOfQuotes() // Since our first quote starts with 0, the next quote would be the count.
+	quote.QuoteId = strconv.Itoa(quoteCount)
+
+	addQuoteToDynamo(quote)
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -121,4 +108,42 @@ func AddQuote(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+}
+
+func UpdateQuote(w http.ResponseWriter, r *http.Request) {
+	// First, lets try to read this thing in.
+	body, err := ioutil.ReadAll(r.Body)
+
+	// Well, something happened.
+	if err != nil {
+		panic(err)
+	}
+
+	// Something else equally awful happened.
+	if err := r.Body.Close(); err != nil {
+		panic(err)
+	}
+
+	quote := DynamoQuote{}
+
+	// We got something, sure, but it looks like it was not a quote.
+	if err := json.Unmarshal(body, &quote); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+		return
+	}
+
+	// At this point it looks like we are in a better place. Lets update the list!
+	updateQuote(quote)
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(quote); err != nil {
+		panic(err)
+	}
 }

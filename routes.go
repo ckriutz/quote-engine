@@ -52,4 +52,10 @@ var routes = Routes{
 		"/quote",
 		AddQuote,
 	},
+	Route{
+		"UpdateQuote",
+		"PUT",
+		"/quote",
+		UpdateQuote,
+	},
 }

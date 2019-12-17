@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
 // readQuoteFromJSONFile does exactly what you think it does.
